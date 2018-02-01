@@ -538,6 +538,9 @@ const mapboxgl = __webpack_require__(0);
 const api = __webpack_require__(3);
 const buildMarker = __webpack_require__(4);
 
+
+console.log('index.js')
+
 /*
  * App State
  */
@@ -547,16 +550,19 @@ const state = {
   selectedAttractions: []
 };
 
+
 /*
   * Instantiate the Map
   */
 
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiY2Fzc2lvemVuIiwiYSI6ImNqNjZydGl5dDJmOWUzM3A4dGQyNnN1ZnAifQ.0ZIRDup0jnyUFVzUa_5d1g";
+mapboxgl.accessToken = "pk.eyJ1IjoiZGFuaWRld2FhbCIsImEiOiJjamQxdWtnNDUwaWU5MzNxZGRsOGw1dTN3In0.ZPZYioFsfTn1fNFC1a8v6w";
+
+const fullstackCoords = [-74.009, 40.705] // NY
+// const fullstackCoords = [-87.6320523, 41.8881084] // CHI
 
 const map = new mapboxgl.Map({
   container: "map",
-  center: [-74.009, 40.705], // FullStack coordinates
+  center: fullstackCoords,
   zoom: 12, // starting zoom
   style: "mapbox://styles/mapbox/streets-v10" // mapbox has lots of different map styles available.
 });
@@ -579,6 +585,14 @@ const makeOption = (attraction, selector) => {
   select.add(option);
 };
 
+if(location.hash) {
+  api.fetchItinerary(location.hash.slice(1))
+  .then((itineraryData) => {
+    itineraryData.hotels.forEach(hotel => buildAttractionAssets("hotels", hotel));
+    itineraryData.restaurants.forEach(restaurant => buildAttractionAssets("restaurants", restaurant));
+    itineraryData.activities.forEach(activity => buildAttractionAssets("activities", activity));
+  });
+}
 /*
   * Attach Event Listeners
   */
@@ -590,10 +604,12 @@ const makeOption = (attraction, selector) => {
     .addEventListener("click", () => handleAddAttraction(attractionType));
 });
 
+
 // Create attraction assets (itinerary item, delete button & marker)
 const handleAddAttraction = attractionType => {
   const select = document.getElementById(`${attractionType}-choices`);
   const selectedId = select.value;
+  console.log(select.value)
 
   // Find the correct attraction given the category and ID
   const selectedAttraction = state.attractions[attractionType].find(
@@ -606,13 +622,27 @@ const handleAddAttraction = attractionType => {
 
   //Build and add attraction
   buildAttractionAssets(attractionType, selectedAttraction);
+  
+  let count = 0;
+  function createSaveButton() {
+    const saveButton = document.createElement("button");
+    saveButton.className = "save-btn";
+    saveButton.append("SAVE ITINERARY");
+    document.getElementById('itinerary').append(saveButton);
+    count++
+  }
+  if(count === 0) {
+    createSaveButton();
+  }
 };
 
 const buildAttractionAssets = (category, attraction) => {
   // Create the Elements that will be inserted in the dom
+  
   const removeButton = document.createElement("button");
   removeButton.className = "remove-btn";
   removeButton.append("x");
+
 
   const itineraryItem = document.createElement("li");
   itineraryItem.className = "itinerary-item";
@@ -625,6 +655,7 @@ const buildAttractionAssets = (category, attraction) => {
   state.selectedAttractions.push({ id: attraction.id, category });
 
   //ADD TO DOM
+  
   document.getElementById(`${category}-list`).append(itineraryItem);
   marker.addTo(map);
 
@@ -647,9 +678,10 @@ const buildAttractionAssets = (category, attraction) => {
     console.log(state);
 
     // Animate map to default position & zoom.
-    map.flyTo({ center: [-74.0, 40.731], zoom: 12.3 });
+    map.flyTo({ center: fullstackCoords, zoom: 12.3 });
   });
 };
+
 
 
 /***/ }),
@@ -686,11 +718,23 @@ module.exports = g;
 const fetchAttractions = () =>
   fetch("/api")
     .then(result => result.json())
-    .catch(console.error);
+    .catch(err => console.error(err));
+
+// : itinerary_id = location.hash.slice(1);
+
+const fetchItinerary = (itinerary_id) => 
+  fetch(`/api/itineraries/${itinerary_id}`)
+  .then(result => result.json())
+  .catch(err => console.error(err))
+
+console.log('api')
+
 
 module.exports = {
-  fetchAttractions
+  fetchAttractions,
+  fetchItinerary
 };
+
 
 
 /***/ }),

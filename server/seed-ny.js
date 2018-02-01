@@ -7,7 +7,8 @@ var {
   Place,
   Hotel,
   Restaurant,
-  Activity
+  Activity,
+  Itinerary
 } = require('./models');
 
 var data = {

@@ -2,6 +2,9 @@ const mapboxgl = require("mapbox-gl");
 const api = require("./api");
 const buildMarker = require("./marker.js");
 
+
+console.log('index.js')
+
 /*
  * App State
  */
@@ -11,11 +14,12 @@ const state = {
   selectedAttractions: []
 };
 
+
 /*
   * Instantiate the Map
   */
 
-mapboxgl.accessToken = "YOUR API TOKEN HERE";
+mapboxgl.accessToken = "pk.eyJ1IjoiZGFuaWRld2FhbCIsImEiOiJjamQxdWtnNDUwaWU5MzNxZGRsOGw1dTN3In0.ZPZYioFsfTn1fNFC1a8v6w";
 
 const fullstackCoords = [-74.009, 40.705] // NY
 // const fullstackCoords = [-87.6320523, 41.8881084] // CHI
@@ -45,6 +49,14 @@ const makeOption = (attraction, selector) => {
   select.add(option);
 };
 
+if(location.hash) {
+  api.fetchItinerary(location.hash.slice(1))
+  .then((itineraryData) => {
+    itineraryData.hotels.forEach(hotel => buildAttractionAssets("hotels", hotel));
+    itineraryData.restaurants.forEach(restaurant => buildAttractionAssets("restaurants", restaurant));
+    itineraryData.activities.forEach(activity => buildAttractionAssets("activities", activity));
+  });
+}
 /*
   * Attach Event Listeners
   */
@@ -56,10 +68,12 @@ const makeOption = (attraction, selector) => {
     .addEventListener("click", () => handleAddAttraction(attractionType));
 });
 
+
 // Create attraction assets (itinerary item, delete button & marker)
 const handleAddAttraction = attractionType => {
   const select = document.getElementById(`${attractionType}-choices`);
   const selectedId = select.value;
+  console.log(select.value)
 
   // Find the correct attraction given the category and ID
   const selectedAttraction = state.attractions[attractionType].find(
@@ -72,13 +86,27 @@ const handleAddAttraction = attractionType => {
 
   //Build and add attraction
   buildAttractionAssets(attractionType, selectedAttraction);
+  
+  let count = 0;
+  function createSaveButton() {
+    const saveButton = document.createElement("button");
+    saveButton.className = "save-btn";
+    saveButton.append("SAVE ITINERARY");
+    document.getElementById('itinerary').append(saveButton);
+    count++
+  }
+  if(count === 0) {
+    createSaveButton();
+  }
 };
 
 const buildAttractionAssets = (category, attraction) => {
   // Create the Elements that will be inserted in the dom
+  
   const removeButton = document.createElement("button");
   removeButton.className = "remove-btn";
   removeButton.append("x");
+
 
   const itineraryItem = document.createElement("li");
   itineraryItem.className = "itinerary-item";
@@ -91,6 +119,7 @@ const buildAttractionAssets = (category, attraction) => {
   state.selectedAttractions.push({ id: attraction.id, category });
 
   //ADD TO DOM
+  
   document.getElementById(`${category}-list`).append(itineraryItem);
   marker.addTo(map);
 
@@ -116,3 +145,4 @@ const buildAttractionAssets = (category, attraction) => {
     map.flyTo({ center: fullstackCoords, zoom: 12.3 });
   });
 };
+
